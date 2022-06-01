@@ -37,7 +37,8 @@ start_message = f"""XRSee websocket server started 🎉
 relay = None
 webcam = None
 
-pc = RTCPeerConnection()
+# This is the set of all active peer connections
+pcs = set() 
 
 def create_local_tracks(play_from, decode):
     global relay, webcam
@@ -46,7 +47,8 @@ def create_local_tracks(play_from, decode):
         player = MediaPlayer(play_from, decode=decode)
         return player.audio, player.video
     else:
-        options = {"framerate": "30", "video_size": "640x480"}
+        #options = {"framerate": "30", "video_size": "640x480"}
+        options = { "video_size": "640x480"}
         if relay is None:
             if platform.system() == "Darwin":
                 webcam = MediaPlayer(
@@ -74,18 +76,23 @@ def force_codec(pc, sender, forced_codec):
 
 async def server(websocket):
     async for message in websocket:
-        print(f"Received message from {websocket.id}")
+        #print(f"Received message from {websocket.id}")
         message_json = json.loads(message)
-        print(json.dumps(message_json, indent=2))
+        print(f"Received {message_json['type']} message from {websocket.id}")
+        #print(json.dumps(message_json, indent=2))
 
         if message_json["type"] == "offer":
             offer = RTCSessionDescription(sdp=message_json["body"]["sdp"], type=message_json["body"]["type"])
+            pc = RTCPeerConnection()
+
+            pcs.add(pc)
             @pc.on("connectionstatechange")
             async def on_connectionstatechange():
                 print("Connection state is %s" % pc.connectionState)
                 if pc.connectionState == "failed":
+                    print(f"Closing connection")
                     await pc.close()
-                   # pcs.discard(pc)
+                    pcs.discard(pc)
 
             # open media source
             audio, video = create_local_tracks(
