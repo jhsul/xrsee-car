@@ -30,7 +30,6 @@ port = 3001
 start_message = f"""XRSee websocket server started 🎉
 > Local:   ws://localhost:{port}"""
 
-
 async def main():
     async with ws.serve(server, "localhost", port):
         print(start_message)
