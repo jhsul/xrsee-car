@@ -3,6 +3,7 @@ import socket
 import json
 import websockets as ws
 import platform
+import argparse
 
 from server import server
 
@@ -27,12 +28,18 @@ def get_ip():
 ip = get_ip()
 port = 3001
 
-start_message = f"""XRSee websocket server started 🎉
-> Local:   ws://localhost:{port}"""
 
-async def main():
-    async with ws.serve(server, "localhost", port):
-        print(start_message)
+
+async def main(args):
+    addr = "localhost" if args["localhost"] else ip
+
+    print(f"XRSee websocket server started on ws://{addr}:{port}")
+    async with ws.serve(server, addr, port):
         await asyncio.Future()
 
-asyncio.run(main())
+
+parser = argparse.ArgumentParser(description="XRSee car script")
+parser.add_argument("--localhost", action="store_true", help=f"use localhost:{port}. Leave blank to use {ip}:{port}")
+args = vars(parser.parse_args())
+
+asyncio.run(main(args))
